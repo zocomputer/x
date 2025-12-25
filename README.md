@@ -1,5 +1,3 @@
-# x-cli
-
 Post to an X account using [Zo Computer](https://zo.computer)
 
 ## Getting X API keys
@@ -89,9 +87,4 @@ X_ACCESS_SECRET=...
 5. Go to Keys and Tokens tab:
    - Copy Consumer Keys (API Key + Secret)
    - Generate Access Token and Secret
-
-## Free Tier Limits
-
-- 500 posts/month
-- 100 reads/month
 
