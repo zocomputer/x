@@ -14,16 +14,16 @@ interface XConfig {
 
 function getConfig(): XConfig {
   const apiKey = process.env.X_API_KEY;
-  const apiSecret = process.env.X_API_SECRET;
+  const apiSecret = process.env.X_API_KEY_SECRET || process.env.X_API_SECRET;
   const accessToken = process.env.X_ACCESS_TOKEN;
-  const accessSecret = process.env.X_ACCESS_SECRET;
+  const accessSecret = process.env.X_ACCESS_TOKEN_SECRET || process.env.X_ACCESS_SECRET;
 
   if (!apiKey || !apiSecret || !accessToken || !accessSecret) {
     console.error("Missing required environment variables:");
     if (!apiKey) console.error("  - X_API_KEY");
-    if (!apiSecret) console.error("  - X_API_SECRET");
+    if (!apiSecret) console.error("  - X_API_KEY_SECRET (or X_API_SECRET)");
     if (!accessToken) console.error("  - X_ACCESS_TOKEN");
-    if (!accessSecret) console.error("  - X_ACCESS_SECRET");
+    if (!accessSecret) console.error("  - X_ACCESS_TOKEN_SECRET (or X_ACCESS_SECRET)");
     console.error("\nSet them in .env or export them to your shell.");
     process.exit(1);
   }
@@ -109,4 +109,5 @@ if (command === "post") {
   console.error(`Unknown command: ${command}`);
   process.exit(1);
 }
+
 
