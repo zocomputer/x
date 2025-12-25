@@ -15,11 +15,11 @@ You need to set up your X (Twitter) API credentials. Follow these detailed steps
     - Enter URL for callback (anything is fine)
     - Enter URL for website (anything is fine)
     - Click "Save"
-- Get your API keys
+- Get your API keys and set them (Zo Settings > Developers > Secrets)
     - Under "Consumer Keys", generate your keys
-        - Set `X_API_KEY` and `X_API_KEY_SECRET` in your environment
+        - Set `X_API_KEY` and `X_API_KEY_SECRET` 
     - Under "Access Token and Secret", generate your keys
-        - Set `X_ACCESS_TOKEN` and `X_ACCESS_TOKEN_SECRET` in your environment
+        - Set `X_ACCESS_TOKEN` and `X_ACCESS_TOKEN_SECRET` 
 
 ## Installation
 
