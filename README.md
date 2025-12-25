@@ -1,6 +1,6 @@
 # x-cli
 
-Dead simple Bun CLI for posting to X (Twitter).
+Post to an X account using [Zo Computer](https://zo.computer)
 
 ## Getting X API keys
 
