@@ -91,20 +91,41 @@ x help
 
 ## Installation
 
+The X CLI comes pre-installed on your Zo Computer. To verify it's working:
+
 ```bash
-# Clone the repo
-cd ~/Integrations
+x help
+```
+
+### If you need to reinstall or update
+
+1. Navigate to your Integrations folder:
+```bash
+cd /home/workspace/Integrations
+```
+
+2. Clone the repository (if not already present):
+```bash
 git clone https://github.com/zocomputer/x.git
 cd x
+```
 
-# Install dependencies
+3. Install dependencies:
+```bash
 bun install
 ```
+
+4. The CLI is now ready to use. Run any of the commands above (e.g., `x post "Hello"`).
+
+### Using the CLI from anywhere
+
+Once installed, you can run `x` commands from any directory. The CLI will use your environment variables from [Settings > Developers](/settings#developers).
 
 ## Troubleshooting
 
 - **Missing environment variables**: Make sure you've added all 4 keys to [Settings > Developers](/settings#developers)
 - **Character limit error**: Count your characters or shorten your message
 - **API errors**: Check your keys are correct in the Developer settings
+
 
 
