@@ -1,92 +1,104 @@
-Post to an X account using [Zo Computer](https://zo.computer)
+# X CLI - Post to X (Twitter)
 
-## Getting X API keys
+Simple command-line tool for posting tweets, quote tweets, and replies to X.
 
-A free X developer account has limits, but is useful for simply posting or reading your account data.
+## Getting Started
 
-You need to set up your X (Twitter) API credentials. Follow these detailed steps:
+### 1. Get X API Keys
 
-- Go to the [X Developer Portal](https://developer.twitter.com/en/portal/dashboard), sign in with your X account
-- Sign in with your X (Twitter) account, sign up for the Free tier
-- Create a new project (or use the default project created for you)
-- Under the project settings, go to "User authentication settings"
-    - For "App permissions", select "Read and Write"
-    - Select "Type of app", select "Web App" or "Native App" (either is fine)
-    - Enter URL for callback (anything is fine)
-    - Enter URL for website (anything is fine)
-    - Click "Save"
-- Get your API keys and set them (Zo Settings > Developers > Secrets)
-    - Under "Consumer Keys", generate your keys
-        - Set `X_API_KEY` and `X_API_KEY_SECRET` 
-    - Under "Access Token and Secret", generate your keys
-        - Set `X_ACCESS_TOKEN` and `X_ACCESS_TOKEN_SECRET` 
+You need X Developer API credentials. Follow these steps:
+
+- Go to [X Developer Portal](https://developer.x.com/en/portal/dashboard)
+- Sign in with your X account
+- Create a new project (or use the default)
+- Create a new app under your project
+- Go to your app's "Keys and Tokens" tab:
+  - Generate API Key and Secret (Consumer Keys)
+  - Generate Access Token and Secret (User Context)
+
+### 2. Add Keys to Zo Settings
+
+Go to [Settings > Developers](/settings#developers) and add these as secrets:
+- `X_API_KEY` (API Key from step 1)
+- `X_API_KEY_SECRET` (API Key Secret from step 1)
+- `X_ACCESS_TOKEN` (Access Token from step 1)
+- `X_ACCESS_TOKEN_SECRET` (Access Token Secret from step 1)
+
+### 3. Use the CLI
+
+```bash
+# Post a tweet
+x post "Hello from X!"
+
+# Quote tweet
+x quote https://x.com/someone/status/1234567890 "Great point!"
+
+# Reply to a tweet
+x reply https://x.com/someone/status/1234567890 "Thanks!"
+```
+
+## Usage Examples
+
+### Simple tweet
+```bash
+x post "I'm learning Zo Computer!"
+```
+
+### Quote tweet (single line)
+```bash
+x quote https://x.com/zocomputer/status/123 "This is so cool"
+```
+
+### Quote tweet with multiple paragraphs
+```bash
+x quote https://x.com/zocomputer/status/123 "Great insight!
+
+This really resonates with me.
+
+Looking forward to more."
+```
+
+### Reply
+```bash
+x reply https://x.com/zocomputer/status/123 "Thanks for sharing"
+```
+
+## Max Length
+
+All tweets are limited to **280 characters**. The CLI will tell you if your text is too long.
+
+## Line Breaks
+
+Use actual line breaks in your shell for multi-paragraph content:
+```bash
+x quote https://x.com/zocomputer/status/123 "Paragraph one.
+
+Paragraph two."
+```
+
+Don't use `\n` - the shell will handle actual newlines.
+
+## Help
+
+```bash
+x help
+```
 
 ## Installation
 
-### On Zo Computer
-
-1. Clone the repo to your Integrations directory:
 ```bash
-mkdir -p ~/Integrations
+# Clone the repo
 cd ~/Integrations
 git clone https://github.com/zocomputer/x.git
-```
+cd x
 
-2. Create a global symlink:
-```bash
-cd ~/Integrations/zocms
-bun build --compile ./x.ts --outfile /usr/local/bin/x
-```
-
-3. Copy the prompt tool to your Prompts directory:
-```bash
-cp ~/Integrations/x/x.prompt.md ~/Prompts/
-```
-
-## Updating
-
-```bash
-cd ~/Integrations/x
-git pull
-bun build --compile ./x.ts --outfile /usr/local/bin/x
-```
-
-## Setup
-
-```bash
+# Install dependencies
 bun install
-cp .env.example .env
-# Edit .env with your keys
 ```
 
-## Usage
+## Troubleshooting
 
-```bash
-bun x.ts post "Hello from the CLI!"
-```
-
-## Required Keys
-
-Get from [X Developer Portal](https://developer.x.com/en/portal/products/free):
-
-```
-X_API_KEY=...
-X_API_KEY_SECRET=...
-X_ACCESS_TOKEN=...
-X_ACCESS_TOKEN_SECRET=...
-```
-
-## Getting Your API Keys
-
-1. Go to [X Developer Portal](https://developer.x.com/en/portal/products/free)
-2. Subscribe to the **Free** tier
-3. Create a Project & App
-4. In App Settings → User authentication settings:
-   - Enable OAuth 1.0a
-   - Set App permissions to **Read and Write**
-5. Go to Keys and Tokens tab:
-   - Copy Consumer Keys (API Key + Secret)
-   - Generate Access Token and Secret
-
-
+- **Missing environment variables**: Make sure you've added all 4 keys to [Settings > Developers](/settings#developers)
+- **Character limit error**: Count your characters or shorten your message
+- **API errors**: Check your keys are correct in the Developer settings
 

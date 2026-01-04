@@ -1,6 +1,6 @@
 ---
 title: Post to X
-description: Post to X (Twitter)
+description: Post tweets, quote tweets, and replies to X (Twitter)
 tags:
   - x
   - twitter
@@ -8,37 +8,61 @@ tags:
 tool: true
 ---
 
-Use this prompt to post tweets to X (Twitter).
+Post content to X using the X CLI.
 
-## Workflow
+## Setup
 
-Use the X CLI to post tweets. Assume the `x` CLI is already installed, follow the instructions in the repo README if not already installed.
+Make sure your X API credentials are configured in [Settings > Developers](/settings#developers):
+- `X_API_KEY`
+- `X_API_KEY_SECRET` (or `X_API_SECRET`)
+- `X_ACCESS_TOKEN`
+- `X_ACCESS_TOKEN_SECRET` (or `X_ACCESS_SECRET`)
+
+[Get your API keys from X Developer Portal](https://developer.x.com/en/portal/products/free)
+
+## Commands
 
 ### Post a tweet
-`x post "Your tweet text here"`
-
-### Quote tweet
-Quote another tweet with your commentary:
-`x quote <tweet_id|url> "Your commentary here"`
-
-### Reply to a tweet
-Reply to an existing tweet:
-`x reply <tweet_id|url> "Your reply here"`
-
-## Examples
-
 ```bash
-# Basic tweet
-x post "Hello from the CLI!"
-
-# Quote tweet using tweet ID
-x quote 1234567890 "This is so true!"
-
-# Quote tweet using URL
-x quote https://x.com/user/status/1234567890 "Great thread"
-
-# Reply to a tweet
-x reply 1234567890 "Thanks for sharing!"
+x post "Your tweet text here"
 ```
 
-Repo for the X CLI and this prompt: https://github.com/zocomputer/x
+**Example:**
+```bash
+x post "Building in public is fun!"
+```
+
+### Quote tweet
+```bash
+x quote <tweet_url> "Your commentary"
+```
+
+**Example:**
+```bash
+x quote https://x.com/someone/status/1234567890 "This is a great insight!"
+```
+
+**With line breaks:**
+```bash
+x quote https://x.com/someone/status/1234567890 "First paragraph here.
+
+Second paragraph here."
+```
+
+### Reply to a tweet
+```bash
+x reply <tweet_url> "Your reply text"
+```
+
+**Example:**
+```bash
+x reply https://x.com/someone/status/1234567890 "Thanks for sharing this!"
+```
+
+## Tips
+
+- Max length is **280 characters** per tweet
+- Use actual line breaks (press Enter in the shell) for multi-paragraph content
+- You can use tweet IDs or full URLs
+- Include quotes of other tweets to increase engagement
+

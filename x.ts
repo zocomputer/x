@@ -91,16 +91,22 @@ const HELP = `
 x-cli - Simple X (Twitter) posting CLI
 
 Usage:
-  x post <text>                 Post a tweet
-  x quote <tweet_id|url> <text> Quote tweet with commentary
-  x reply <tweet_id|url> <text> Reply to a tweet
-  x help                        Show this help
+  x post <text>                          Post a tweet
+  x quote <url> <text>                   Quote tweet with commentary
+  x reply <url> <text>                   Reply to a tweet
+  x help                                 Show this help
 
 Examples:
-  x post "Hello from the CLI!"
-  x quote 1234567890 "This is so true!"
-  x quote https://x.com/user/status/1234567890 "Great thread"
-  x reply 1234567890 "Thanks for sharing!"
+  x post "Hello from CLI"
+  x quote https://x.com/user/status/123 "Great point!"
+  x reply https://x.com/user/status/123 "Thanks for sharing"
+
+Note: Use actual line breaks in your text:
+  x quote https://x.com/user/status/123 "First paragraph.
+
+Second paragraph."
+
+Max length: 280 characters
 `;
 
 const args = process.argv.slice(2);
@@ -123,6 +129,7 @@ if (command === "post") {
 
   if (text.length > 280) {
     console.error(`Error: Tweet is ${text.length} chars (max 280)`);
+    console.error(`You need to cut ${text.length - 280} characters.`);
     process.exit(1);
   }
 
@@ -149,6 +156,7 @@ if (command === "post") {
 
   if (text.length > 280) {
     console.error(`Error: Tweet is ${text.length} chars (max 280)`);
+    console.error(`You need to cut ${text.length - 280} characters.`);
     process.exit(1);
   }
 
@@ -175,6 +183,7 @@ if (command === "post") {
 
   if (text.length > 280) {
     console.error(`Error: Tweet is ${text.length} chars (max 280)`);
+    console.error(`You need to cut ${text.length - 280} characters.`);
     process.exit(1);
   }
 
@@ -192,3 +201,4 @@ if (command === "post") {
   console.error(`Unknown command: ${command}`);
   process.exit(1);
 }
+
