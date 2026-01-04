@@ -85,6 +85,32 @@ async function postTweet(options: TweetOptions, config: XConfig) {
   return response.json();
 }
 
+async function deleteTweet(tweetId: string, config: XConfig) {
+  const oauth = new OAuth({
+    consumer: { key: config.apiKey, secret: config.apiSecret },
+    signature_method: "HMAC-SHA1",
+    hash_function: (baseString, key) =>
+      CryptoJS.HmacSHA1(baseString, key).toString(CryptoJS.enc.Base64),
+  });
+
+  const token = { key: config.accessToken, secret: config.accessSecret };
+  const url = `https://api.twitter.com/2/tweets/${tweetId}`;
+  const requestData = { url, method: "DELETE" as const };
+  const authHeader = oauth.toHeader(oauth.authorize(requestData, token));
+
+  const response = await fetch(url, {
+    method: "DELETE",
+    headers: { ...authHeader },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`X API Error: ${JSON.stringify(error, null, 2)}`);
+  }
+
+  return response.json();
+}
+
 // --- CLI ---
 
 const HELP = `
@@ -94,12 +120,14 @@ Usage:
   x post <text>                          Post a tweet
   x quote <url> <text>                   Quote tweet with commentary
   x reply <url> <text>                   Reply to a tweet
+  x delete <url>                         Delete a tweet
   x help                                 Show this help
 
 Examples:
   x post "Hello from CLI"
   x quote https://x.com/user/status/123 "Great point!"
   x reply https://x.com/user/status/123 "Thanks for sharing"
+  x delete https://x.com/user/status/123
 
 Note: Use actual line breaks in your text:
   x quote https://x.com/user/status/123 "First paragraph.
@@ -193,6 +221,29 @@ if (command === "post") {
     const result = await postTweet({ text, replyToId }, config);
     console.log("✓ Replied!");
     console.log(`  https://x.com/i/status/${result.data.id}`);
+  } catch (error) {
+    console.error("✗ Failed:", error);
+    process.exit(1);
+  }
+} else if (command === "delete") {
+  const tweetIdOrUrl = args[1];
+
+  if (!tweetIdOrUrl) {
+    console.error("Usage: x delete <tweet_id|url>");
+    process.exit(1);
+  }
+
+  const tweetId = extractTweetId(tweetIdOrUrl);
+
+  console.log(`Deleting tweet ${tweetId}...`);
+
+  try {
+    const result = await deleteTweet(tweetId, config);
+    if (result.data?.deleted) {
+      console.log("✓ Deleted!");
+    } else {
+      console.log("✗ Tweet may not have been deleted:", result);
+    }
   } catch (error) {
     console.error("✗ Failed:", error);
     process.exit(1);

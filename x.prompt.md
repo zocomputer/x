@@ -59,10 +59,19 @@ x reply <tweet_url> "Your reply text"
 x reply https://x.com/someone/status/1234567890 "Thanks for sharing this!"
 ```
 
+### Delete a tweet
+```bash
+x delete <tweet_url>
+```
+
+**Example:**
+```bash
+x delete https://x.com/i/status/1234567890
+```
+
 ## Tips
 
 - Max length is **280 characters** per tweet
 - Use actual line breaks (press Enter in the shell) for multi-paragraph content
 - You can use tweet IDs or full URLs
 - Include quotes of other tweets to increase engagement
-
