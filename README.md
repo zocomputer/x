@@ -1,6 +1,6 @@
 # X CLI - Post to X (Twitter)
 
-Simple command-line tool for posting tweets, quote tweets, and replies to X.
+Simple command-line tool for posting tweets, quote tweets, replies, and deleting tweets on X.
 
 ## Getting Started
 
@@ -63,6 +63,11 @@ Looking forward to more."
 x reply https://x.com/zocomputer/status/123 "Thanks for sharing"
 ```
 
+### Delete a tweet
+```bash
+x delete https://x.com/i/status/123
+```
+
 ## Max Length
 
 All tweets are limited to **280 characters**. The CLI will tell you if your text is too long.
@@ -101,4 +106,5 @@ bun install
 - **Missing environment variables**: Make sure you've added all 4 keys to [Settings > Developers](/settings#developers)
 - **Character limit error**: Count your characters or shorten your message
 - **API errors**: Check your keys are correct in the Developer settings
+
 
