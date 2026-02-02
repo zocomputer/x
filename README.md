@@ -12,6 +12,7 @@ You need X Developer API credentials. Follow these steps:
 - Sign in with your X account
 - Create a new project (or use the default)
 - Create a new app under your project
+- Go into the OAuth settings and set it to read & write
 - Go to your app's "Keys and Tokens" tab:
   - Generate API Key and Secret (Consumer Keys)
   - Generate Access Token and Secret (User Context)
