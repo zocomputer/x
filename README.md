@@ -44,6 +44,11 @@ x reply https://x.com/someone/status/1234567890 "Thanks!"
 x post "I'm learning Zo Computer!"
 ```
 
+### Tweet with image
+```bash
+x post --media /home/workspace/Images/pegasus_crossroads.png "Zo Computer + art"
+```
+
 ### Quote tweet (single line)
 ```bash
 x quote https://x.com/zocomputer/status/123 "This is so cool"

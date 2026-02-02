@@ -2,6 +2,7 @@
 
 import OAuth from "oauth-1.0a";
 import CryptoJS from "crypto-js";
+import path from "path";
 
 // --- Config ---
 
@@ -31,12 +32,81 @@ function getConfig(): XConfig {
   return { apiKey, apiSecret, accessToken, accessSecret };
 }
 
+function createOauth(config: XConfig) {
+  return new OAuth({
+    consumer: { key: config.apiKey, secret: config.apiSecret },
+    signature_method: "HMAC-SHA1",
+    hash_function: (baseString, key) =>
+      CryptoJS.HmacSHA1(baseString, key).toString(CryptoJS.enc.Base64),
+  });
+}
+
 // --- Helpers ---
 
 function extractTweetId(input: string): string {
-  // Extract tweet ID from URL like https://x.com/user/status/1234567890
   const match = input.match(/\/status\/(\d+)/);
   return match ? match[1] : input;
+}
+
+function parseTextAndMedia(args: string[]) {
+  const mediaPaths: string[] = [];
+  let i = 0;
+  while (i < args.length) {
+    const token = args[i];
+
+    if (token === "--media") {
+      const pathArg = args[i + 1];
+      if (!pathArg) {
+        console.error("Usage error: --media must be followed by a file path.");
+        process.exit(1);
+      }
+      mediaPaths.push(pathArg);
+      i += 2;
+      continue;
+    }
+
+    return {
+      text: args.slice(i).join(" "),
+      mediaPaths,
+    };
+  }
+
+  return { text: "", mediaPaths };
+}
+
+async function uploadMediaPath(filePath: string, config: XConfig) {
+  const resolved = path.isAbsolute(filePath) ? filePath : path.resolve(filePath);
+  const arrayBuffer = await Bun.file(resolved).arrayBuffer();
+  const mediaData = Buffer.from(arrayBuffer).toString("base64");
+
+  const oauth = createOauth(config);
+  const token = { key: config.accessToken, secret: config.accessSecret };
+  const url = "https://upload.twitter.com/1.1/media/upload.json";
+  const requestData = { url, method: "POST" as const, data: { media_data: mediaData } };
+  const authHeader = oauth.toHeader(oauth.authorize(requestData, token));
+  const body = new URLSearchParams({ media_data: mediaData });
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { ...authHeader, "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`X API Error (media upload): ${JSON.stringify(error, null, 2)}`);
+  }
+
+  const data = await response.json();
+  return data.media_id_string;
+}
+
+async function uploadMediaPaths(paths: string[], config: XConfig) {
+  const mediaIds: string[] = [];
+  for (const mediaPath of paths) {
+    mediaIds.push(await uploadMediaPath(mediaPath, config));
+  }
+  return mediaIds;
 }
 
 // --- API ---
@@ -45,30 +115,25 @@ interface TweetOptions {
   text: string;
   quoteTweetId?: string;
   replyToId?: string;
+  mediaIds?: string[];
 }
 
 async function postTweet(options: TweetOptions, config: XConfig) {
-  const oauth = new OAuth({
-    consumer: { key: config.apiKey, secret: config.apiSecret },
-    signature_method: "HMAC-SHA1",
-    hash_function: (baseString, key) =>
-      CryptoJS.HmacSHA1(baseString, key).toString(CryptoJS.enc.Base64),
-  });
-
+  const oauth = createOauth(config);
   const token = { key: config.accessToken, secret: config.accessSecret };
   const url = "https://api.twitter.com/2/tweets";
   const requestData = { url, method: "POST" as const };
   const authHeader = oauth.toHeader(oauth.authorize(requestData, token));
 
-  // Build request body
   const body: Record<string, unknown> = { text: options.text };
-
   if (options.quoteTweetId) {
     body.quote_tweet_id = options.quoteTweetId;
   }
-
   if (options.replyToId) {
     body.reply = { in_reply_to_tweet_id: options.replyToId };
+  }
+  if (options.mediaIds && options.mediaIds.length) {
+    body.media = { media_ids: options.mediaIds };
   }
 
   const response = await fetch(url, {
@@ -86,13 +151,7 @@ async function postTweet(options: TweetOptions, config: XConfig) {
 }
 
 async function deleteTweet(tweetId: string, config: XConfig) {
-  const oauth = new OAuth({
-    consumer: { key: config.apiKey, secret: config.apiSecret },
-    signature_method: "HMAC-SHA1",
-    hash_function: (baseString, key) =>
-      CryptoJS.HmacSHA1(baseString, key).toString(CryptoJS.enc.Base64),
-  });
-
+  const oauth = createOauth(config);
   const token = { key: config.accessToken, secret: config.accessSecret };
   const url = `https://api.twitter.com/2/tweets/${tweetId}`;
   const requestData = { url, method: "DELETE" as const };
@@ -117,14 +176,15 @@ const HELP = `
 x-cli - Simple X (Twitter) posting CLI
 
 Usage:
-  x post <text>                          Post a tweet
-  x quote <url> <text>                   Quote tweet with commentary
-  x reply <url> <text>                   Reply to a tweet
-  x delete <url>                         Delete a tweet
-  x help                                 Show this help
+  x post [--media <path>] <text>                          Post a tweet (attach images by repeating --media)
+  x quote <url> [--media <path>] <text>                    Quote tweet with commentary
+  x reply <url> [--media <path>] <text>                    Reply to a tweet
+  x delete <url>                                           Delete a tweet
+  x help                                                   Show this help
 
 Examples:
   x post "Hello from CLI"
+  x post --media /home/workspace/Images/pegasus_crossroads.png "Zo Computer + art"
   x quote https://x.com/user/status/123 "Great point!"
   x reply https://x.com/user/status/123 "Thanks for sharing"
   x delete https://x.com/user/status/123
@@ -147,109 +207,106 @@ if (!command || command === "help" || command === "-h") {
 
 const config = getConfig();
 
-if (command === "post") {
-  const text = args.slice(1).join(" ");
-
+function assertText(text: string, usage: string) {
   if (!text) {
-    console.error('Usage: x post "Your tweet here"');
+    console.error(usage);
     process.exit(1);
   }
-
   if (text.length > 280) {
     console.error(`Error: Tweet is ${text.length} chars (max 280)`);
     console.error(`You need to cut ${text.length - 280} characters.`);
     process.exit(1);
   }
-
-  console.log(`Posting: "${text}"`);
-
-  try {
-    const result = await postTweet({ text }, config);
-    console.log("✓ Posted!");
-    console.log(`  https://x.com/i/status/${result.data.id}`);
-  } catch (error) {
-    console.error("✗ Failed:", error);
-    process.exit(1);
-  }
-} else if (command === "quote") {
-  const tweetIdOrUrl = args[1];
-  const text = args.slice(2).join(" ");
-
-  if (!tweetIdOrUrl || !text) {
-    console.error('Usage: x quote <tweet_id|url> "Your commentary here"');
-    process.exit(1);
-  }
-
-  const quoteTweetId = extractTweetId(tweetIdOrUrl);
-
-  if (text.length > 280) {
-    console.error(`Error: Tweet is ${text.length} chars (max 280)`);
-    console.error(`You need to cut ${text.length - 280} characters.`);
-    process.exit(1);
-  }
-
-  console.log(`Quoting tweet ${quoteTweetId}: "${text}"`);
-
-  try {
-    const result = await postTweet({ text, quoteTweetId }, config);
-    console.log("✓ Quote tweeted!");
-    console.log(`  https://x.com/i/status/${result.data.id}`);
-  } catch (error) {
-    console.error("✗ Failed:", error);
-    process.exit(1);
-  }
-} else if (command === "reply") {
-  const tweetIdOrUrl = args[1];
-  const text = args.slice(2).join(" ");
-
-  if (!tweetIdOrUrl || !text) {
-    console.error('Usage: x reply <tweet_id|url> "Your reply here"');
-    process.exit(1);
-  }
-
-  const replyToId = extractTweetId(tweetIdOrUrl);
-
-  if (text.length > 280) {
-    console.error(`Error: Tweet is ${text.length} chars (max 280)`);
-    console.error(`You need to cut ${text.length - 280} characters.`);
-    process.exit(1);
-  }
-
-  console.log(`Replying to tweet ${replyToId}: "${text}"`);
-
-  try {
-    const result = await postTweet({ text, replyToId }, config);
-    console.log("✓ Replied!");
-    console.log(`  https://x.com/i/status/${result.data.id}`);
-  } catch (error) {
-    console.error("✗ Failed:", error);
-    process.exit(1);
-  }
-} else if (command === "delete") {
-  const tweetIdOrUrl = args[1];
-
-  if (!tweetIdOrUrl) {
-    console.error("Usage: x delete <tweet_id|url>");
-    process.exit(1);
-  }
-
-  const tweetId = extractTweetId(tweetIdOrUrl);
-
-  console.log(`Deleting tweet ${tweetId}...`);
-
-  try {
-    const result = await deleteTweet(tweetId, config);
-    if (result.data?.deleted) {
-      console.log("✓ Deleted!");
-    } else {
-      console.log("✗ Tweet may not have been deleted:", result);
-    }
-  } catch (error) {
-    console.error("✗ Failed:", error);
-    process.exit(1);
-  }
-} else {
-  console.error(`Unknown command: ${command}`);
-  process.exit(1);
 }
+
+async function run() {
+  if (command === "post") {
+    const { text, mediaPaths } = parseTextAndMedia(args.slice(1));
+    assertText(text, 'Usage: x post "Your tweet here"');
+
+    const mediaIds = mediaPaths.length ? await uploadMediaPaths(mediaPaths, config) : [];
+
+    console.log(`Posting: "${text}"`);
+    try {
+      const result = await postTweet({ text, mediaIds }, config);
+      console.log("✓ Posted!");
+      console.log(`  https://x.com/i/status/${result.data.id}`);
+    } catch (error) {
+      console.error("✗ Failed:", error);
+      process.exit(1);
+    }
+  } else if (command === "quote") {
+    const tweetIdOrUrl = args[1];
+    if (!tweetIdOrUrl) {
+      console.error('Usage: x quote <tweet_id|url> "Your commentary here"');
+      process.exit(1);
+    }
+
+    const { text, mediaPaths } = parseTextAndMedia(args.slice(2));
+    assertText(text, 'Usage: x quote <tweet_id|url> "Your commentary here"');
+
+    const quoteTweetId = extractTweetId(tweetIdOrUrl);
+    const mediaIds = mediaPaths.length ? await uploadMediaPaths(mediaPaths, config) : [];
+
+    console.log(`Quoting tweet ${quoteTweetId}: "${text}"`);
+    try {
+      const result = await postTweet({ text, quoteTweetId, mediaIds }, config);
+      console.log("✓ Quote tweeted!");
+      console.log(`  https://x.com/i/status/${result.data.id}`);
+    } catch (error) {
+      console.error("✗ Failed:", error);
+      process.exit(1);
+    }
+  } else if (command === "reply") {
+    const tweetIdOrUrl = args[1];
+    if (!tweetIdOrUrl) {
+      console.error('Usage: x reply <tweet_id|url> "Your reply here"');
+      process.exit(1);
+    }
+
+    const { text, mediaPaths } = parseTextAndMedia(args.slice(2));
+    assertText(text, 'Usage: x reply <tweet_id|url> "Your reply here"');
+
+    const replyToId = extractTweetId(tweetIdOrUrl);
+    const mediaIds = mediaPaths.length ? await uploadMediaPaths(mediaPaths, config) : [];
+
+    console.log(`Replying to tweet ${replyToId}: "${text}"`);
+    try {
+      const result = await postTweet({ text, replyToId, mediaIds }, config);
+      console.log("✓ Replied!");
+      console.log(`  https://x.com/i/status/${result.data.id}`);
+    } catch (error) {
+      console.error("✗ Failed:", error);
+      process.exit(1);
+    }
+  } else if (command === "delete") {
+    const tweetIdOrUrl = args[1];
+
+    if (!tweetIdOrUrl) {
+      console.error("Usage: x delete <tweet_id|url>");
+      process.exit(1);
+    }
+
+    const tweetId = extractTweetId(tweetIdOrUrl);
+
+    console.log(`Deleting tweet ${tweetId}...`);
+
+    try {
+      const result = await deleteTweet(tweetId, config);
+      if (result.data?.deleted) {
+        console.log("✓ Deleted!");
+      } else {
+        console.log("✗ Tweet may not have been deleted:", result);
+      }
+    } catch (error) {
+      console.error("✗ Failed:", error);
+      process.exit(1);
+    }
+  } else {
+    console.error(`Unknown command: ${command}`);
+    process.exit(1);
+  }
+}
+
+await run();
 

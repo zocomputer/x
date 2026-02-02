@@ -24,7 +24,7 @@ Make sure your X API credentials are configured in [Settings > Developers](/sett
 
 ### Post a tweet
 ```bash
-x post "Your tweet text here"
+x post [--media <path>] "Your tweet text here"
 ```
 
 **Example:**
@@ -34,7 +34,7 @@ x post "Building in public is fun!"
 
 ### Quote tweet
 ```bash
-x quote <tweet_url> "Your commentary"
+x quote <tweet_url> [--media <path>] "Your commentary"
 ```
 
 **Example:**
@@ -51,7 +51,7 @@ Second paragraph here."
 
 ### Reply to a tweet
 ```bash
-x reply <tweet_url> "Your reply text"
+x reply <tweet_url> [--media <path>] "Your reply text"
 ```
 
 **Example:**
